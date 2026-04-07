@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIT Campus Energy Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.34.0.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f7f9fc; color: #172b4d; }
+    .header { padding: 24px; background: #0b3d91; color: white; }
+    .header h1 { margin: 0 0 8px; }
+    .header p { margin: 0; opacity: 0.85; }
+    .container { width: min(1200px, 96%); margin: 24px auto; }
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); padding: 20px; }
+    .card h3 { margin: 0 0 12px; font-size: 15px; color: #475569; }
+    .card p { margin: 0; font-size: 28px; font-weight: 700; }
+    .chart-card { background: white; border-radius: 12px; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); padding: 18px; margin-bottom: 24px; }
+    .chart-card h2 { margin: 0 0 12px; font-size: 18px; }
+    .notes { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); }
+    .notes h2 { margin-top: 0; }
+    select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; background: white; }
+    .footer { text-align: center; color: #475569; margin: 32px 0 48px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="container">
+      <h1>VIT Campus Energy Utility Dashboard</h1>
+      <p>Interactive shareable summary of block energy consumption, load drivers, savings potential, and reconciliation.</p>
+    </div>
+  </div>
+  <div class="container">
+    <div class="filters card">
+      <div>
+        <label for="typeSelect"><strong>Block Type</strong></label>
+        <select id="typeSelect" multiple size="3"></select>
+      </div>
+      <div>
+        <label for="blockSelect"><strong>Block</strong></label>
+        <select id="blockSelect" multiple size="6"></select>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <h3>Reported Total</h3>
+        <p id="reportedTotal">2,592 kWh/day</p>
+      </div>
+      <div class="card">
+        <h3>Modeled Total</h3>
+        <p id="modeledTotal">2,112 kWh/day</p>
+      </div>
+      <div class="card">
+        <h3>Reconciliation Gap</h3>
+        <p id="gapTotal">480 kWh/day</p>
+      </div>
+      <div class="card">
+        <h3>Solar + LED Savings</h3>
+        <p id="savingsTotal">2,073.6 kWh/day</p>
+      </div>
+    </div>
+
+    <div class="chart-card"><h2>Daily Energy Consumption by Block</h2><div id="consumptionChart"></div></div>
+    <div class="chart-card"><h2>Reported vs Modeled Reconciliation</h2><div id="reconciliationChart"></div></div>
+    <div class="chart-card"><h2>Load Driver Breakdown by Block</h2><div id="driverChart"></div></div>
+    <div class="chart-card"><h2>Potential Daily Savings by Initiative</h2><div id="initiativesChart"></div></div>
+
+    <div class="notes">
+      <h2>Key Insights</h2>
+      <ul>
+        <li>M Block consumes the most energy at 752 kWh/day, roughly 2.3x a standard classroom block.</li>
+        <li>Six classroom blocks have equal consumption at 328 kWh/day.</li>
+        <li>Library is the low-end outlier with 200 kWh/day.</li>
+        <li>Only rooftop solar and LED replacement have quantified savings in the provided dataset.</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      Open this file in any browser or publish it as a static web page for easy sharing.
+    </div>
+  </div>
+
+  <script>
+    const blocks = [
+      { Block: 'M Block', Type: 'Classroom', daily: 752, ac: 504, lighting: 168, equipment: 80, other: 0 },
+      { Block: 'B Block', Type: 'Classroom', daily: 328, ac: 216, lighting: 72, equipment: 40, other: 0 },
+      { Block: 'C Block', Type: 'Classroom', daily: 328, ac: 216, lighting: 72, equipment: 40, other: 0 },
+      { Block: 'D Block', Type: 'Classroom', daily: 328, ac: 216, lighting: 72, equipment: 40, other: 0 },
+      { Block: 'E Block', Type: 'Classroom', daily: 328, ac: 216, lighting: 72, equipment: 40, other: 0 },
+      { Block: 'F Block', Type: 'Classroom', daily: 328, ac: 216, lighting: 72, equipment: 40, other: 0 },
+      { Block: 'Library', Type: 'Library', daily: 200, ac: 120, lighting: 40, equipment: 40, other: 0 }
+    ];
+
+    const initiatives = [
+      { initiative: 'Install Rooftop Solar Panels on all Blocks', savings: 1296 },
+      { initiative: 'Replace conventional lights with LED lighting', savings: 777.6 },
+      { initiative: 'Install Smart Energy Meters for each block', savings: 0 },
+      { initiative: 'Use Occupancy Sensors in classrooms and labs', savings: 0 },
+      { initiative: 'Upgrade to 5-star rated inverter AC systems', savings: 0 },
+      { initiative: 'Implement Energy Monitoring Dashboard', savings: 0 },
+      { initiative: 'Install Solar Water Heating Systems', savings: 0 },
+      { initiative: 'Conduct Energy Audit every 6 months', savings: 0 },
+      { initiative: 'Introduce Battery Storage System for solar integration', savings: 0 },
+      { initiative: 'Student-led Energy Awareness Campaign', savings: 0 }
+    ];
+
+    const recon = [
+      { stage: 'Reported Total', measure: 'relative', amount: 2592 },
+      { stage: 'Modeled Total', measure: 'relative', amount: -2112 },
+      { stage: 'Reconciliation Gap', measure: 'total', amount: -480 }
+    ];
+
+    function renderFilters() {
+      const typeSelect = document.getElementById('typeSelect');
+      const blockSelect = document.getElementById('blockSelect');
+      const types = [...new Set(blocks.map(b => b.Type))];
+      types.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        option.selected = true;
+        typeSelect.appendChild(option);
+      });
+      blocks.forEach(block => {
+        const option = document.createElement('option');
+        option.value = block.Block;
+        option.textContent = block.Block;
+        option.selected = true;
+        blockSelect.appendChild(option);
+      });
+
+      typeSelect.addEventListener('change', updateCharts);
+      blockSelect.addEventListener('change', updateCharts);
+    }
+
+    function getFilteredBlocks() {
+      const selectedTypes = Array.from(document.getElementById('typeSelect').selectedOptions).map(o => o.value);
+      const selectedBlocks = Array.from(document.getElementById('blockSelect').selectedOptions).map(o => o.value);
+      return blocks.filter(b => selectedTypes.includes(b.Type) && selectedBlocks.includes(b.Block));
+    }
+
+    function renderConsumptionChart(filtered) {
+      const trace = {
+        x: filtered.map(b => b.Block),
+        y: filtered.map(b => b.daily),
+        text: filtered.map(b => b.daily),
+        type: 'bar',
+        marker: { color: '#0b3d91' }
+      };
+      const layout = {
+        margin: { t: 30, l: 50, r: 20, b: 80 },
+        yaxis: { title: 'kWh/day' },
+        xaxis: { title: 'Block', tickangle: -30 }
+      };
+      Plotly.newPlot('consumptionChart', [trace], layout, {responsive:true});
+    }
+
+    function renderDriverChart(filtered) {
+      const driverNames = ['ac', 'lighting', 'equipment', 'other'];
+      const driverLabels = ['AC kWh', 'Lighting kWh', 'Equipment kWh', 'Other kWh'];
+      const traces = driverNames.map((driver, idx) => ({
+        x: filtered.map(b => b.Block),
+        y: filtered.map(b => b[driver]),
+        name: driverLabels[idx],
+        type: 'bar'
+      }));
+      const layout = {
+        barmode: 'stack',
+        margin: { t: 30, l: 50, r: 20, b: 80 },
+        yaxis: { title: 'kWh/day' },
+        xaxis: { title: 'Block', tickangle: -30 }
+      };
+      Plotly.newPlot('driverChart', traces, layout, {responsive:true});
+    }
+
+    function renderReconciliationChart() {
+      const trace = {
+        x: recon.map(r => r.stage),
+        y: recon.map(r => r.amount),
+        measure: recon.map(r => r.measure),
+        type: 'waterfall',
+        text: recon.map(r => (r.amount > 0 ? '+' : '') + r.amount),
+        textposition: 'outside',
+        decreasing: { marker: { color: '#d62728' } },
+        increasing: { marker: { color: '#2ca02c' } },
+        totals: { marker: { color: '#1f77b4' } }
+      };
+      const layout = {
+        margin: { t: 30, l: 50, r: 20, b: 80 },
+        yaxis: { title: 'kWh/day' }
+      };
+      Plotly.newPlot('reconciliationChart', [trace], layout, {responsive:true});
+    }
+
+    function renderInitiativesChart() {
+      const trace = {
+        x: initiatives.map(i => i.initiative),
+        y: initiatives.map(i => i.savings),
+        type: 'bar',
+        marker: { color: '#1f77b4' }
+      };
+      const layout = {
+        margin: { t: 30, l: 50, r: 20, b: 140 },
+        yaxis: { title: 'kWh/day' },
+        xaxis: { tickangle: -45 }
+      };
+      Plotly.newPlot('initiativesChart', [trace], layout, {responsive:true});
+    }
+
+    function updateCharts() {
+      const filtered = getFilteredBlocks();
+      if (filtered.length === 0) {
+        document.getElementById('consumptionChart').innerHTML = '<div style="padding: 40px; text-align:center; color:#334155;">Select at least one block and one block type to show charts.</div>';
+        document.getElementById('driverChart').innerHTML = '<div style="padding: 40px; text-align:center; color:#334155;">Select at least one block and one block type to show charts.</div>';
+        return;
+      }
+      renderConsumptionChart(filtered);
+      renderDriverChart(filtered);
+    }
+
+    function init() {
+      renderFilters();
+      updateCharts();
+      renderReconciliationChart();
+      renderInitiativesChart();
+    }
+
+    init();
+  </script>
+</body>
+</html>

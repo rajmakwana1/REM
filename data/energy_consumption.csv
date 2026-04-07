@@ -1,0 +1,8 @@
+Block,Block Type,Daily kWh,AC kWh,Lighting kWh,Equipment kWh,Other kWh
+M Block,Classroom,752,504,168,80,0
+B Block,Classroom,328,216,72,40,0
+C Block,Classroom,328,216,72,40,0
+D Block,Classroom,328,216,72,40,0
+E Block,Classroom,328,216,72,40,0
+F Block,Classroom,328,216,72,40,0
+Library,Library,200,120,40,40,0

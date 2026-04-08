@@ -45,9 +45,11 @@ To deploy:
    ```
 3. Enable GitHub Pages in the repository settings, if not automatic.
 
-The static site will then be served from the `docs/` folder. Your published site URL will typically be:
+The static site will then be served from the `docs/` folder.
 
-- `https://<your-username>.github.io/<repo-name>/`
+### Published site
+
+- `https://rajmakwana1.github.io/REM/`
 
 ## Notes
 
